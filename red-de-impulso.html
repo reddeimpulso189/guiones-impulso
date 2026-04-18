@@ -1,0 +1,608 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Red de Impulso — Guiones</title>
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Share+Tech+Mono&family=Exo+2:wght@300;400;600;700;900&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --negro: #050508;
+    --negro3: #0f0f18;
+    --panel: #111118;
+    --panel2: #16161f;
+    --azul: #1a6aff;
+    --azul2: #0d4fd4;
+    --azul-neon: #4d9fff;
+    --texto: #c8d0e0;
+    --texto2: #6a7490;
+    --blanco: #eef2ff;
+    --verde-neon: #00ffaa;
+    --amarillo-neon: #ffcc00;
+    --rojo-neon: #ff4d6a;
+    --borde: rgba(29,100,255,0.15);
+    --borde2: rgba(29,100,255,0.08);
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { background:var(--negro); color:var(--texto); font-family:'Exo 2',sans-serif; min-height:100vh; overflow-x:hidden; }
+  body::before {
+    content:''; position:fixed; inset:0;
+    background-image: linear-gradient(rgba(29,106,255,0.025) 1px,transparent 1px), linear-gradient(90deg,rgba(29,106,255,0.025) 1px,transparent 1px);
+    background-size:40px 40px; pointer-events:none; z-index:0;
+  }
+  .ambient { position:fixed; border-radius:50%; pointer-events:none; z-index:0; filter:blur(90px); opacity:0.06; }
+  .amb1 { width:600px; height:600px; background:var(--azul); top:-200px; left:-150px; }
+  .amb2 { width:400px; height:400px; background:var(--azul-neon); bottom:-100px; right:-100px; }
+
+  /* LOADER */
+  #loader {
+    position:fixed; inset:0; background:var(--negro);
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    z-index:999; gap:16px;
+  }
+  .loader-logo { font-family:'Rajdhani',sans-serif; font-size:28px; font-weight:700; color:var(--blanco); letter-spacing:2px; }
+  .loader-sub { font-family:'Share Tech Mono',monospace; font-size:11px; color:var(--azul-neon); letter-spacing:3px; }
+  .loader-bar { width:200px; height:2px; background:var(--panel2); border-radius:2px; overflow:hidden; }
+  .loader-fill { height:100%; background:linear-gradient(90deg,var(--azul2),var(--azul-neon)); border-radius:2px; animation:loadfill 1.2s ease forwards; }
+  @keyframes loadfill { from{width:0} to{width:100%} }
+
+  /* SYNC STATUS */
+  #sync-badge {
+    position:fixed; bottom:16px; right:16px; z-index:50;
+    padding:6px 14px; border-radius:20px;
+    border:1px solid var(--borde); background:var(--panel);
+    font-family:'Share Tech Mono',monospace; font-size:10px;
+    display:flex; align-items:center; gap:6px;
+    transition:all 0.3s; opacity:0;
+  }
+  #sync-badge.show { opacity:1; }
+  .sync-dot { width:6px; height:6px; border-radius:50%; }
+  .sync-ok   { background:var(--verde-neon); box-shadow:0 0 6px var(--verde-neon); }
+  .sync-wait { background:var(--amarillo-neon); animation:pulse 1s infinite; }
+  .sync-err  { background:var(--rojo-neon); }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
+
+  /* HEADER */
+  header {
+    position:relative; z-index:10;
+    padding:20px 28px; border-bottom:1px solid var(--borde);
+    background:rgba(5,5,8,0.92); backdrop-filter:blur(14px);
+    display:flex; align-items:center; justify-content:space-between; gap:16px; flex-wrap:wrap;
+  }
+  .logo-area { display:flex; align-items:center; gap:12px; }
+  .logo-icon {
+    width:40px; height:40px; background:linear-gradient(135deg,var(--azul2),var(--azul));
+    border-radius:10px; display:flex; align-items:center; justify-content:center;
+    font-size:18px; box-shadow:0 0 20px rgba(29,106,255,0.4);
+  }
+  .logo-text h1 { font-family:'Rajdhani',sans-serif; font-size:20px; font-weight:700; color:var(--blanco); letter-spacing:1px; line-height:1; }
+  .logo-text span { font-family:'Share Tech Mono',monospace; font-size:9px; color:var(--azul-neon); letter-spacing:3px; text-transform:uppercase; }
+  .header-stats { display:flex; gap:10px; flex-wrap:wrap; }
+  .stat-pill { display:flex; align-items:center; gap:7px; padding:5px 12px; border-radius:20px; border:1px solid var(--borde); background:var(--panel); font-size:11px; }
+  .stat-dot { width:6px; height:6px; border-radius:50%; flex-shrink:0; }
+  .dot-espera { background:var(--amarillo-neon); box-shadow:0 0 8px var(--amarillo-neon); }
+  .dot-hecho  { background:var(--verde-neon);    box-shadow:0 0 8px var(--verde-neon); }
+  .dot-total  { background:var(--azul-neon);     box-shadow:0 0 8px var(--azul-neon); }
+  .stat-num { font-family:'Share Tech Mono',monospace; color:var(--blanco); font-size:13px; font-weight:bold; }
+  .neon-line { height:1px; background:linear-gradient(90deg,transparent,var(--azul-neon),transparent); opacity:0.12; }
+
+  main { position:relative; z-index:5; max-width:1060px; margin:0 auto; padding:28px 20px 80px; }
+
+  .top-bar { display:flex; align-items:center; justify-content:space-between; margin-bottom:22px; flex-wrap:wrap; gap:12px; }
+  .tabs { display:flex; gap:3px; background:var(--panel); padding:4px; border-radius:10px; border:1px solid var(--borde2); }
+  .tab {
+    padding:8px 14px; border-radius:7px; border:none;
+    background:transparent; color:var(--texto2);
+    font-family:'Exo 2',sans-serif; font-size:12px; font-weight:600;
+    cursor:pointer; transition:all 0.2s;
+  }
+  .tab.active { background:var(--azul); color:#fff; box-shadow:0 0 14px rgba(29,106,255,0.4); }
+  .tab:not(.active):hover { color:var(--texto); }
+  .btn-add {
+    display:flex; align-items:center; gap:8px; padding:10px 20px;
+    background:linear-gradient(135deg,var(--azul2),var(--azul));
+    border:none; border-radius:10px; color:#fff;
+    font-family:'Exo 2',sans-serif; font-size:13px; font-weight:700;
+    cursor:pointer; box-shadow:0 0 20px rgba(29,106,255,0.3); transition:all 0.2s;
+  }
+  .btn-add:hover { transform:translateY(-1px); box-shadow:0 0 32px rgba(29,106,255,0.5); }
+
+  /* RANKING */
+  .ranking-section { margin-bottom:28px; }
+  .section-title {
+    font-family:'Rajdhani',sans-serif; font-size:12px; font-weight:700;
+    color:var(--azul-neon); letter-spacing:3px; text-transform:uppercase;
+    margin-bottom:12px; display:flex; align-items:center; gap:8px;
+  }
+  .section-title::after { content:''; flex:1; height:1px; background:var(--borde); }
+  .ranking-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(190px,1fr)); gap:10px; }
+  .rank-card {
+    background:var(--panel); border:1px solid var(--borde); border-radius:12px; padding:14px;
+    display:flex; flex-direction:column; gap:5px; position:relative; overflow:hidden; transition:transform 0.2s;
+  }
+  .rank-card:hover { transform:translateY(-2px); }
+  .rank-card::before { content:''; position:absolute; top:0; left:0; right:0; height:2px; }
+  .rank-1::before { background:linear-gradient(90deg,#ffd700,#ffaa00); box-shadow:0 0 10px rgba(255,215,0,0.4); }
+  .rank-2::before { background:linear-gradient(90deg,#c0c0c0,#909090); }
+  .rank-3::before { background:linear-gradient(90deg,#cd7f32,#8b4513); }
+  .rank-other::before { background:var(--borde); }
+  .rank-badge { font-family:'Share Tech Mono',monospace; font-size:9px; font-weight:700; letter-spacing:1px; }
+  .rank-1 .rank-badge { color:#ffd700; }
+  .rank-2 .rank-badge { color:#c0c0c0; }
+  .rank-3 .rank-badge { color:#cd7f32; }
+  .rank-other .rank-badge { color:var(--texto2); }
+  .rank-titulo { font-family:'Rajdhani',sans-serif; font-size:13px; font-weight:700; color:var(--blanco); line-height:1.3; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+  .rank-views { font-family:'Share Tech Mono',monospace; font-size:20px; font-weight:700; color:var(--azul-neon); margin-top:4px; }
+  .rank-views-label { font-size:9px; color:var(--texto2); text-transform:uppercase; letter-spacing:1px; }
+  .rank-mini-stats { display:flex; gap:8px; margin-top:3px; flex-wrap:wrap; }
+  .rank-mini { font-size:10px; color:var(--texto2); }
+
+  /* GRID */
+  .grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(300px,1fr)); gap:16px; }
+  .empty-state { grid-column:1/-1; text-align:center; padding:60px 20px; color:var(--texto2); }
+  .empty-state .ei { font-size:44px; margin-bottom:14px; opacity:0.35; }
+  .empty-state p { font-size:14px; line-height:1.6; }
+
+  /* CARD */
+  .card {
+    background:var(--panel); border:1px solid var(--borde); border-radius:14px; overflow:hidden;
+    transition:transform 0.2s,box-shadow 0.2s; display:flex; flex-direction:column; animation:fadeIn 0.3s ease;
+  }
+  @keyframes fadeIn { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
+  .card:hover { transform:translateY(-2px); box-shadow:0 8px 28px rgba(29,106,255,0.1); }
+  .card-top { padding:16px 16px 12px; flex:1; }
+  .card-status-row { display:flex; align-items:center; justify-content:space-between; margin-bottom:10px; }
+  .badge { display:flex; align-items:center; gap:5px; padding:3px 9px; border-radius:20px; font-size:9px; font-weight:700; letter-spacing:1px; text-transform:uppercase; font-family:'Share Tech Mono',monospace; }
+  .badge-espera { background:rgba(255,204,0,0.1); border:1px solid rgba(255,204,0,0.25); color:var(--amarillo-neon); }
+  .badge-hecho  { background:rgba(0,255,170,0.08); border:1px solid rgba(0,255,170,0.2);  color:var(--verde-neon); }
+  .badge-dot { width:5px; height:5px; border-radius:50%; background:currentColor; }
+  .card-date { font-family:'Share Tech Mono',monospace; font-size:9px; color:var(--texto2); }
+  .card-title { font-family:'Rajdhani',sans-serif; font-size:16px; font-weight:700; color:var(--blanco); margin-bottom:6px; line-height:1.3; }
+  .card-desc { font-size:11px; color:var(--texto2); line-height:1.5; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; margin-bottom:10px; }
+  .card-stats {
+    display:grid; grid-template-columns:repeat(4,1fr); gap:4px; margin-top:10px;
+    padding:10px 8px; background:var(--negro3); border-radius:8px; border:1px solid var(--borde2);
+  }
+  .cs { display:flex; flex-direction:column; align-items:center; gap:2px; }
+  .cs-icon { font-size:11px; }
+  .cs-val { font-family:'Share Tech Mono',monospace; font-size:13px; font-weight:700; color:var(--blanco); line-height:1; }
+  .cs-val.hl { color:var(--azul-neon); }
+  .cs-label { font-size:8px; color:var(--texto2); text-transform:uppercase; letter-spacing:0.8px; }
+  .no-stats-msg { font-size:10px; color:var(--texto2); text-align:center; padding:6px; font-style:italic; grid-column:1/-1; }
+  .stats-note { font-size:10px; color:var(--texto2); margin-top:8px; font-style:italic; line-height:1.4; padding:6px 8px; background:var(--negro3); border-radius:6px; border-left:2px solid var(--azul); }
+  .card-pdf-bar { display:flex; align-items:center; gap:8px; margin-top:10px; padding:8px 10px; background:var(--negro3); border-radius:7px; border:1px solid var(--borde2); cursor:pointer; transition:border-color 0.2s; }
+  .card-pdf-bar:hover { border-color:var(--azul); }
+  .pdf-name { font-family:'Share Tech Mono',monospace; font-size:10px; color:var(--azul-neon); flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .pdf-view-btn { font-size:9px; color:var(--texto2); text-transform:uppercase; letter-spacing:1px; }
+  .card-actions { display:flex; border-top:1px solid var(--borde2); }
+  .action-btn { flex:1; padding:10px 4px; border:none; background:transparent; color:var(--texto2); font-family:'Exo 2',sans-serif; font-size:11px; font-weight:600; cursor:pointer; transition:all 0.15s; }
+  .action-btn:hover { background:var(--panel2); color:var(--texto); }
+  .action-btn.toggle-hecho:hover  { color:var(--verde-neon); }
+  .action-btn.toggle-espera:hover { color:var(--amarillo-neon); }
+  .action-btn.stats-btn:hover { color:var(--azul-neon); }
+  .action-btn.del:hover { color:var(--rojo-neon); }
+  .action-btn + .action-btn { border-left:1px solid var(--borde2); }
+
+  /* MODALES */
+  .modal-bg { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.88); z-index:100; backdrop-filter:blur(8px); align-items:center; justify-content:center; padding:20px; }
+  .modal-bg.open { display:flex; }
+  .modal { background:var(--panel); border:1px solid var(--borde); border-radius:16px; width:100%; max-width:480px; box-shadow:0 0 60px rgba(29,106,255,0.15); animation:modalIn 0.22s ease; max-height:90vh; overflow-y:auto; }
+  @keyframes modalIn { from{opacity:0;transform:scale(0.95)} to{opacity:1;transform:scale(1)} }
+  .modal-header { display:flex; align-items:center; justify-content:space-between; padding:18px 22px 14px; border-bottom:1px solid var(--borde2); position:sticky; top:0; background:var(--panel); z-index:1; }
+  .modal-title { font-family:'Rajdhani',sans-serif; font-size:17px; font-weight:700; color:var(--blanco); }
+  .modal-close { width:28px; height:28px; border:none; background:var(--panel2); color:var(--texto2); border-radius:6px; cursor:pointer; font-size:14px; display:flex; align-items:center; justify-content:center; transition:all 0.15s; }
+  .modal-close:hover { background:var(--rojo-neon); color:#fff; }
+  .modal-body { padding:18px 22px; }
+  .field { margin-bottom:16px; }
+  .field label { display:block; font-size:10px; font-weight:700; color:var(--azul-neon); text-transform:uppercase; letter-spacing:1.5px; margin-bottom:7px; font-family:'Share Tech Mono',monospace; }
+  .field input, .field textarea, .field select { width:100%; background:var(--negro3); border:1px solid var(--borde); border-radius:8px; padding:9px 13px; color:var(--blanco); font-family:'Exo 2',sans-serif; font-size:13px; outline:none; transition:border-color 0.2s; resize:none; }
+  .field input:focus, .field textarea:focus, .field select:focus { border-color:var(--azul); box-shadow:0 0 0 3px rgba(29,106,255,0.1); }
+  .field textarea { min-height:70px; }
+  .field select option { background:var(--panel); }
+  .stats-grid-input { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+  .upload-area { border:1.5px dashed var(--borde); border-radius:10px; padding:20px; text-align:center; cursor:pointer; transition:all 0.2s; background:var(--negro3); }
+  .upload-area:hover { border-color:var(--azul); }
+  .upload-area.has-file { border-color:var(--verde-neon); background:rgba(0,255,170,0.03); }
+  .upload-area input { display:none; }
+  .upload-icon { font-size:24px; margin-bottom:6px; }
+  .upload-text { font-size:12px; color:var(--texto2); }
+  .upload-filename { font-family:'Share Tech Mono',monospace; font-size:11px; color:var(--verde-neon); margin-top:5px; }
+  .modal-footer { display:flex; gap:8px; padding:14px 22px; border-top:1px solid var(--borde2); justify-content:flex-end; position:sticky; bottom:0; background:var(--panel); }
+  .btn-cancel { padding:9px 18px; border:1px solid var(--borde); background:transparent; color:var(--texto2); border-radius:8px; cursor:pointer; font-family:'Exo 2',sans-serif; font-size:12px; font-weight:600; transition:all 0.15s; }
+  .btn-cancel:hover { color:var(--texto); border-color:var(--texto2); }
+  .btn-save { padding:9px 22px; background:linear-gradient(135deg,var(--azul2),var(--azul)); border:none; border-radius:8px; color:#fff; font-family:'Exo 2',sans-serif; font-size:12px; font-weight:700; cursor:pointer; box-shadow:0 0 14px rgba(29,106,255,0.3); transition:all 0.15s; }
+  .btn-save:hover { box-shadow:0 0 22px rgba(29,106,255,0.5); }
+
+  /* PDF VIEWER */
+  .pdf-modal-bg { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.97); z-index:200; flex-direction:column; }
+  .pdf-modal-bg.open { display:flex; }
+  .pdf-modal-bar { display:flex; align-items:center; justify-content:space-between; padding:12px 18px; background:var(--panel); border-bottom:1px solid var(--borde); flex-shrink:0; }
+  .pdf-modal-title { font-family:'Share Tech Mono',monospace; font-size:12px; color:var(--azul-neon); }
+  .pdf-close-btn { padding:7px 16px; background:var(--panel2); border:1px solid var(--borde); color:var(--texto); border-radius:8px; cursor:pointer; font-family:'Exo 2',sans-serif; font-size:12px; font-weight:600; transition:all 0.15s; }
+  .pdf-close-btn:hover { border-color:var(--rojo-neon); color:var(--rojo-neon); }
+  .pdf-frame-wrap { flex:1; overflow:hidden; }
+  .pdf-frame-wrap iframe { width:100%; height:100%; border:none; background:#fff; }
+</style>
+</head>
+<body>
+
+<div class="ambient amb1"></div>
+<div class="ambient amb2"></div>
+
+<!-- LOADER -->
+<div id="loader">
+  <div class="loader-logo">RED DE IMPULSO</div>
+  <div class="loader-sub">Conectando con la nube...</div>
+  <div class="loader-bar"><div class="loader-fill"></div></div>
+</div>
+
+<!-- SYNC BADGE -->
+<div id="sync-badge">
+  <div class="sync-dot sync-ok" id="sync-dot"></div>
+  <span id="sync-text">Sincronizado</span>
+</div>
+
+<header>
+  <div class="logo-area">
+    <div class="logo-icon">⚡</div>
+    <div class="logo-text">
+      <h1>RED DE IMPULSO</h1>
+      <span>Gestor de Guiones</span>
+    </div>
+  </div>
+  <div class="header-stats">
+    <div class="stat-pill"><div class="stat-dot dot-total"></div><span>Total</span><span class="stat-num" id="count-total">0</span></div>
+    <div class="stat-pill"><div class="stat-dot dot-espera"></div><span>Espera</span><span class="stat-num" id="count-espera">0</span></div>
+    <div class="stat-pill"><div class="stat-dot dot-hecho"></div><span>Realizados</span><span class="stat-num" id="count-hecho">0</span></div>
+  </div>
+</header>
+<div class="neon-line"></div>
+
+<main>
+  <div class="ranking-section" id="ranking-section" style="display:none">
+    <div class="section-title">🏆 Ranking por Visualizaciones</div>
+    <div class="ranking-grid" id="ranking-grid"></div>
+  </div>
+  <div class="top-bar">
+    <div class="tabs">
+      <button class="tab active" onclick="setTab('todos',this)">Todos</button>
+      <button class="tab" onclick="setTab('espera',this)">En Espera</button>
+      <button class="tab" onclick="setTab('hecho',this)">Realizados</button>
+      <button class="tab" onclick="setTab('ranking-tab',this)">🏆 Ranking</button>
+    </div>
+    <button class="btn-add" onclick="openModal()">＋ Nuevo Guion</button>
+  </div>
+  <div class="grid" id="grid"></div>
+</main>
+
+<!-- MODAL NUEVO GUION -->
+<div class="modal-bg" id="modal-bg">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title">Nuevo Guion</span>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="field"><label>Título del video</label><input type="text" id="inp-titulo" placeholder="Ej: Antes de emprender, escucha esto" /></div>
+      <div class="field"><label>Descripción breve</label><textarea id="inp-desc" placeholder="¿De qué trata este video?"></textarea></div>
+      <div class="field">
+        <label>Estado inicial</label>
+        <select id="inp-status"><option value="espera">⏳ En espera</option><option value="hecho">✅ Realizado</option></select>
+      </div>
+      <div class="field">
+        <label>Guion en PDF (opcional)</label>
+        <div class="upload-area" id="upload-area" onclick="document.getElementById('inp-pdf').click()">
+          <input type="file" id="inp-pdf" accept="application/pdf" onchange="handleFile(this)">
+          <div class="upload-icon">📄</div>
+          <div class="upload-text">Toca aquí para subir tu PDF</div>
+          <div class="upload-filename" id="upload-filename"></div>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-cancel" onclick="closeModal()">Cancelar</button>
+      <button class="btn-save" onclick="saveGuion()">Guardar Guion</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL STATS -->
+<div class="modal-bg" id="stats-modal-bg">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title">📊 Estadísticas del Video</span>
+      <button class="modal-close" onclick="closeStatsModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div style="font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--azul-neon);margin-bottom:16px;line-height:1.4;" id="stats-modal-subtitle"></div>
+      <div class="stats-grid-input">
+        <div class="field"><label>👁 Visualizaciones</label><input type="number" id="st-views" placeholder="0" min="0" /></div>
+        <div class="field"><label>❤️ Likes</label><input type="number" id="st-likes" placeholder="0" min="0" /></div>
+        <div class="field"><label>💬 Comentarios</label><input type="number" id="st-comments" placeholder="0" min="0" /></div>
+        <div class="field"><label>↗️ Compartidas</label><input type="number" id="st-shares" placeholder="0" min="0" /></div>
+      </div>
+      <div class="field"><label>Nota / Aprendizaje</label><textarea id="st-note" placeholder="¿Qué funcionó? ¿Vale la pena repetir el tema?"></textarea></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-cancel" onclick="closeStatsModal()">Cancelar</button>
+      <button class="btn-save" onclick="saveStats()">Guardar Stats</button>
+    </div>
+  </div>
+</div>
+
+<!-- PDF VIEWER -->
+<div class="pdf-modal-bg" id="pdf-modal">
+  <div class="pdf-modal-bar">
+    <span class="pdf-modal-title" id="pdf-modal-name">guion.pdf</span>
+    <button class="pdf-close-btn" onclick="closePdf()">✕ Cerrar</button>
+  </div>
+  <div class="pdf-frame-wrap"><iframe id="pdf-iframe" src=""></iframe></div>
+</div>
+
+<!-- FIREBASE -->
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+  import { getFirestore, collection, addDoc, getDocs, doc, updateDoc, deleteDoc, onSnapshot, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyCUbEcMWRzojlQLGkkRlY9fJkpav0RuToo",
+    authDomain: "guiones-impulso.firebaseapp.com",
+    projectId: "guiones-impulso",
+    storageBucket: "guiones-impulso.firebasestorage.app",
+    messagingSenderId: "313315729350",
+    appId: "1:313315729350:web:24ea4b4a977b8b01fc5cc7"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const db  = getFirestore(app);
+  const COL = collection(db, "guiones");
+
+  let guiones = [];
+  let currentTab = 'todos';
+  let currentPdfBase64 = null;
+  let currentPdfFileName = null;
+  let editingStatsId = null;
+
+  // ---- SYNC UI ----
+  function showSync(state, msg) {
+    const badge = document.getElementById('sync-badge');
+    const dot   = document.getElementById('sync-dot');
+    const text  = document.getElementById('sync-text');
+    dot.className = 'sync-dot sync-' + state;
+    text.textContent = msg;
+    badge.classList.add('show');
+    if (state === 'ok') setTimeout(() => badge.classList.remove('show'), 2500);
+  }
+
+  // ---- REAL-TIME LISTENER ----
+  onSnapshot(COL, (snapshot) => {
+    guiones = snapshot.docs.map(d => ({ _id: d.id, ...d.data() }));
+    guiones.sort((a,b) => (b.createdAt?.seconds||0) - (a.createdAt?.seconds||0));
+    hideLoder();
+    render();
+    showSync('ok', 'Sincronizado');
+  }, (err) => {
+    console.error(err);
+    showSync('err', 'Sin conexión');
+    hideLoder();
+  });
+
+  function hideLoder() {
+    const l = document.getElementById('loader');
+    if (l) { l.style.opacity='0'; l.style.transition='opacity 0.4s'; setTimeout(()=>l.remove(),400); }
+  }
+
+  // ---- FORMAT ----
+  function fmtNum(n) {
+    if (n===null||n===undefined||n==='') return '—';
+    n = Number(n); if(isNaN(n)) return '—';
+    if(n>=1000000) return (n/1000000).toFixed(1)+'M';
+    if(n>=1000)    return (n/1000).toFixed(1)+'K';
+    return n.toLocaleString('es-MX');
+  }
+
+  // ---- RANKING ----
+  function renderRanking() {
+    const sec  = document.getElementById('ranking-section');
+    const grid = document.getElementById('ranking-grid');
+    if (currentTab==='espera'||currentTab==='hecho'||currentTab==='ranking-tab') { sec.style.display='none'; return; }
+    const conStats = guiones.filter(g=>g.stats&&g.stats.views>0).sort((a,b)=>b.stats.views-a.stats.views).slice(0,6);
+    if (!conStats.length) { sec.style.display='none'; return; }
+    sec.style.display='block';
+    const medals=['🥇 ORO','🥈 PLATA','🥉 BRONCE'];
+    grid.innerHTML = conStats.map((g,i)=>{
+      const cls=i<3?`rank-${i+1}`:'rank-other';
+      const badge=i<3?medals[i]:`# ${i+1}`;
+      return `<div class="rank-card ${cls}">
+        <div class="rank-badge">${badge}</div>
+        <div class="rank-titulo">${g.titulo}</div>
+        <div class="rank-views">${fmtNum(g.stats.views)}</div>
+        <div class="rank-views-label">visualizaciones</div>
+        <div class="rank-mini-stats">
+          <div class="rank-mini">❤️ ${fmtNum(g.stats.likes)}</div>
+          <div class="rank-mini">💬 ${fmtNum(g.stats.comments)}</div>
+          <div class="rank-mini">↗️ ${fmtNum(g.stats.shares)}</div>
+        </div>
+      </div>`;
+    }).join('');
+  }
+
+  // ---- RENDER ----
+  function render() {
+    document.getElementById('count-total').textContent  = guiones.length;
+    document.getElementById('count-espera').textContent = guiones.filter(g=>g.status==='espera').length;
+    document.getElementById('count-hecho').textContent  = guiones.filter(g=>g.status==='hecho').length;
+    renderRanking();
+
+    let list = [...guiones];
+    if (currentTab==='espera') list=list.filter(g=>g.status==='espera');
+    if (currentTab==='hecho')  list=list.filter(g=>g.status==='hecho');
+    if (currentTab==='ranking-tab') list=guiones.filter(g=>g.stats).sort((a,b)=>(b.stats?.views||0)-(a.stats?.views||0));
+
+    const grid=document.getElementById('grid');
+    if (!list.length) {
+      const msgs={todos:'Agrega tu primer guion.',espera:'No hay guiones en espera.',hecho:'Aún no realizas ningún video.','ranking-tab':'Agrega estadísticas para ver el ranking.'};
+      grid.innerHTML=`<div class="empty-state"><div class="ei">📋</div><p>${msgs[currentTab]||''}</p></div>`;
+      return;
+    }
+
+    grid.innerHTML = list.map((g,idx)=>{
+      const isHecho=g.status==='hecho';
+      const badge=isHecho
+        ?`<span class="badge badge-hecho"><span class="badge-dot"></span>Realizado</span>`
+        :`<span class="badge badge-espera"><span class="badge-dot"></span>En Espera</span>`;
+
+      let rankBadge='';
+      if(currentTab==='ranking-tab'&&g.stats){
+        const pos=idx+1;
+        const m=pos===1?'🥇':pos===2?'🥈':pos===3?'🥉':`#${pos}`;
+        rankBadge=`<span style="font-family:'Share Tech Mono',monospace;font-size:12px;color:${pos<=3?'#ffd700':'var(--texto2)'};">${m}</span>`;
+      }
+
+      let statsHtml='';
+      if(g.stats&&(g.stats.views||g.stats.likes||g.stats.comments||g.stats.shares)){
+        statsHtml=`<div class="card-stats">
+          <div class="cs"><span class="cs-icon">👁</span><span class="cs-val hl">${fmtNum(g.stats.views)}</span><span class="cs-label">Views</span></div>
+          <div class="cs"><span class="cs-icon">❤️</span><span class="cs-val">${fmtNum(g.stats.likes)}</span><span class="cs-label">Likes</span></div>
+          <div class="cs"><span class="cs-icon">💬</span><span class="cs-val">${fmtNum(g.stats.comments)}</span><span class="cs-label">Coments</span></div>
+          <div class="cs"><span class="cs-icon">↗️</span><span class="cs-val">${fmtNum(g.stats.shares)}</span><span class="cs-label">Shares</span></div>
+        </div>
+        ${g.stats.note?`<div class="stats-note">"${g.stats.note}"</div>`:''}`;
+      } else if(isHecho){
+        statsHtml=`<div class="card-stats"><div class="no-stats-msg">Sin estadísticas — toca 📊 Stats</div></div>`;
+      }
+
+      const pdfBar=g.pdfName
+        ?`<div class="card-pdf-bar" onclick="window._viewPdf('${g._id}')">
+            <span>📄</span><span class="pdf-name">${g.pdfName}</span><span class="pdf-view-btn">Ver →</span>
+          </div>`:'' ;
+
+      const toggleLabel=isHecho?'↩ A espera':'✅ Realizado';
+      const toggleClass=isHecho?'toggle-espera':'toggle-hecho';
+
+      return `<div class="card">
+        <div class="card-top">
+          <div class="card-status-row">
+            <div style="display:flex;align-items:center;gap:8px;">${badge}${rankBadge}</div>
+            <span class="card-date">${g.fecha||''}</span>
+          </div>
+          <div class="card-title">${g.titulo}</div>
+          ${g.desc?`<div class="card-desc">${g.desc}</div>`:''}
+          ${statsHtml}${pdfBar}
+        </div>
+        <div class="card-actions">
+          <button class="action-btn ${toggleClass}" onclick="window._toggle('${g._id}')">${toggleLabel}</button>
+          <button class="action-btn stats-btn" onclick="window._openStats('${g._id}')">📊 Stats</button>
+          <button class="action-btn del" onclick="window._delete('${g._id}')">🗑</button>
+        </div>
+      </div>`;
+    }).join('');
+  }
+
+  // ---- TABS ----
+  window.setTab = (tab,el) => {
+    currentTab=tab;
+    document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+    el.classList.add('active');
+    render();
+  };
+
+  // ---- MODAL GUION ----
+  window.openModal = () => {
+    document.getElementById('inp-titulo').value='';
+    document.getElementById('inp-desc').value='';
+    document.getElementById('inp-status').value='espera';
+    document.getElementById('upload-filename').textContent='';
+    document.getElementById('upload-area').classList.remove('has-file');
+    document.getElementById('inp-pdf').value='';
+    currentPdfBase64=null; currentPdfFileName=null;
+    document.getElementById('modal-bg').classList.add('open');
+  };
+  window.closeModal = () => document.getElementById('modal-bg').classList.remove('open');
+
+  window.handleFile = (input) => {
+    const file=input.files[0]; if(!file) return;
+    currentPdfFileName=file.name;
+    document.getElementById('upload-filename').textContent=file.name;
+    document.getElementById('upload-area').classList.add('has-file');
+    const reader=new FileReader();
+    reader.onload=e=>{ currentPdfBase64=e.target.result; };
+    reader.readAsDataURL(file);
+  };
+
+  window.saveGuion = async () => {
+    const titulo=document.getElementById('inp-titulo').value.trim();
+    if(!titulo){ alert('Ponle un título al guion.'); return; }
+    showSync('wait','Guardando...');
+    await addDoc(COL,{
+      titulo,
+      desc: document.getElementById('inp-desc').value.trim(),
+      status: document.getElementById('inp-status').value,
+      fecha: new Date().toLocaleDateString('es-MX',{day:'2-digit',month:'short',year:'numeric'}),
+      pdfName: currentPdfFileName||null,
+      pdfData: currentPdfBase64||null,
+      stats: null,
+      createdAt: serverTimestamp()
+    });
+    window.closeModal();
+  };
+
+  // ---- MODAL STATS ----
+  window._openStats = (id) => {
+    editingStatsId=id;
+    const g=guiones.find(x=>x._id===id); if(!g) return;
+    document.getElementById('stats-modal-subtitle').textContent=g.titulo;
+    const s=g.stats||{};
+    document.getElementById('st-views').value    =s.views    ??'';
+    document.getElementById('st-likes').value    =s.likes    ??'';
+    document.getElementById('st-comments').value =s.comments ??'';
+    document.getElementById('st-shares').value   =s.shares   ??'';
+    document.getElementById('st-note').value     =s.note     ??'';
+    document.getElementById('stats-modal-bg').classList.add('open');
+  };
+  window.closeStatsModal = () => { document.getElementById('stats-modal-bg').classList.remove('open'); editingStatsId=null; };
+
+  window.saveStats = async () => {
+    const g=guiones.find(x=>x._id===editingStatsId); if(!g) return;
+    showSync('wait','Guardando stats...');
+    const updates = {
+      stats:{
+        views:    parseInt(document.getElementById('st-views').value)||0,
+        likes:    parseInt(document.getElementById('st-likes').value)||0,
+        comments: parseInt(document.getElementById('st-comments').value)||0,
+        shares:   parseInt(document.getElementById('st-shares').value)||0,
+        note:     document.getElementById('st-note').value.trim()
+      }
+    };
+    if(g.status==='espera') updates.status='hecho';
+    await updateDoc(doc(db,'guiones',editingStatsId), updates);
+    window.closeStatsModal();
+  };
+
+  // ---- ACCIONES ----
+  window._toggle = async (id) => {
+    const g=guiones.find(x=>x._id===id); if(!g) return;
+    showSync('wait','Actualizando...');
+    await updateDoc(doc(db,'guiones',id),{ status: g.status==='hecho'?'espera':'hecho' });
+  };
+  window._delete = async (id) => {
+    if(!confirm('¿Eliminar este guion?')) return;
+    showSync('wait','Eliminando...');
+    await deleteDoc(doc(db,'guiones',id));
+  };
+
+  // ---- PDF ----
+  window._viewPdf = (id) => {
+    const g=guiones.find(x=>x._id===id);
+    if(!g||!g.pdfData){ alert('No hay PDF adjunto.'); return; }
+    document.getElementById('pdf-modal-name').textContent=g.pdfName;
+    document.getElementById('pdf-iframe').src=g.pdfData;
+    document.getElementById('pdf-modal').classList.add('open');
+  };
+  window.closePdf = () => {
+    document.getElementById('pdf-modal').classList.remove('open');
+    document.getElementById('pdf-iframe').src='';
+  };
+</script>
+</body>
+</html>
